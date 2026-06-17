@@ -76,9 +76,7 @@
         button:hover { opacity: 0.9; }
         button:active { transform: scale(0.99); }
 
-        /* Resultado siempre oculto hasta que se asigne clase */
         #resultado { display: none; margin-top: 22px; border-radius: 10px; overflow: hidden; }
-
         #resultado.visible { display: block; }
 
         .resultado-header {
@@ -110,7 +108,6 @@
         }
 
         .precio-row:last-child { border-bottom: none; }
-
         .precio-row .label { font-weight: 600; }
 
         .precio-row .valor {
@@ -120,9 +117,8 @@
         }
 
         .precio-row .valor.real { color: #2c5364; }
-
-        .precio-row .valor.diff-pos { color: #b3261e; }
-        .precio-row .valor.diff-neg { color: #1f7a3d; }
+        .precio-row .valor.diff-sobre { color: #b3261e; }
+        .precio-row .valor.diff-sub { color: #1f7a3d; }
 
         #resultado.error-box {
             display: block;
@@ -214,7 +210,6 @@
                 </div>
             </div>
 
-            <!-- Precio real opcional para comparar -->
             <div class="real-price-section">
                 <label for="precio_real">💡 Precio real del vehículo (opcional, para comparar)</label>
                 <input type="number" id="precio_real" name="precio_real" min="0" step="0.01" placeholder="Ej: 52993.45">
@@ -241,7 +236,6 @@
             const resultado = document.getElementById('resultado');
             const precioRealInput = document.getElementById('precio_real').value;
 
-            // Resetear sin inline style
             resultado.className = '';
             resultado.innerHTML = '';
 
@@ -270,9 +264,8 @@
                         const diff = predicho - real;
                         const diffAbs = Math.abs(diff);
                         const pct = ((diffAbs / real) * 100).toFixed(2);
-                        const signo = diff >= 0 ? '+' : '-';
-                        const diffClass = diff >= 0 ? 'diff-pos' : 'diff-neg';
-                        const emoji = diff >= 0 ? '🔺' : '🔻';
+                        const direccion = diff >= 0 ? 'Sobreestimado' : 'Subestimado';
+                        const diffClass = diff >= 0 ? 'diff-sobre' : 'diff-sub';
 
                         html += `
                             <div class="precio-row">
@@ -280,8 +273,8 @@
                                 <span class="valor real">$${fmt(real)}</span>
                             </div>
                             <div class="precio-row">
-                                <span class="label">${emoji} Diferencia</span>
-                                <span class="valor ${diffClass}">${signo}$${fmt(diffAbs)} (${signo}${pct}%)</span>
+                                <span class="label">📐 Diferencia (${direccion})</span>
+                                <span class="valor ${diffClass}">$${fmt(diffAbs)} (${pct}%)</span>
                             </div>`;
                     }
 
@@ -297,7 +290,5 @@
             });
         }
     </script>
-    
 </body>
 </html>
-
