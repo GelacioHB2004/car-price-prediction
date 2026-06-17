@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Predicción de Precio de Automóviles</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            max-width: 520px;
+            width: 100%;
+            padding: 36px 40px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #1c2b36;
+            margin-bottom: 4px;
+        }
+
+        p.subtitle {
+            color: #6b7c8a;
+            margin-top: 0;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d6dde2;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1c2b36;
+            background: #f8fafb;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2c5364;
+            box-shadow: 0 0 0 3px rgba(44, 83, 100, 0.15);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 8px;
+            padding: 13px;
+            background: linear-gradient(135deg, #2c5364, #0f2027);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.99);
+        }
+
+        #resultado {
+            margin-top: 22px;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        #resultado.success {
+            background: #e7f6ec;
+            color: #1f7a3d;
+            border: 1px solid #b9e3c4;
+            display: block;
+        }
+
+        #resultado.error {
+            background: #fdecea;
+            color: #b3261e;
+            border: 1px solid #f5c2c0;
+            display: block;
+        }
+
+        #resultado .precio {
+            font-size: 26px;
+            font-weight: 700;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            font-size: 12px;
+            color: #9aa7b0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚗 Predicción de Precio de Automóviles</h1>
+        <p class="subtitle">Modelo de Random Forest Regressor &middot; Ingresa los datos del vehículo</p>
+
+        <form id="formulario" onsubmit="predecirPrecio(event)">
+            <div class="grid">
+                <div class="field">
+                    <label for="brand">Marca</label>
+                    <select id="brand" name="brand" required>
+                        {% for b in brands %}
+                        <option value="{{ b }}">{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="year">Año</label>
+                    <input type="number" id="year" name="year" min="1990" max="2026" value="2018" required>
+                </div>
+
+                <div class="field">
+                    <label for="mileage">Kilometraje (km)</label>
+                    <input type="number" id="mileage" name="mileage" min="0" value="80000" required>
+                </div>
+
+                <div class="field">
+                    <label for="engine_size">Tamaño de Motor (L)</label>
+                    <input type="number" id="engine_size" name="engine_size" min="0.5" max="8" step="0.1" value="2.5" required>
+                </div>
+
+                <div class="field">
+                    <label for="fuel_type">Tipo de Combustible</label>
+                    <select id="fuel_type" name="fuel_type" required>
+                        {% for f in fuel_types %}
+                        <option value="{{ f }}">{{ f }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="transmission">Transmisión</label>
+                    <select id="transmission" name="transmission" required>
+                        {% for t in transmissions %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field full">
+                    <label for="condition">Condición</label>
+                    <select id="condition" name="condition" required>
+                        {% for c in conditions %}
+                        <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit">Predecir Precio</button>
+        </form>
+
+        <div id="resultado"></div>
+
+        <p class="footer-note">Modelo entrenado con Random Forest &middot; Validación cruzada cv=7</p>
+    </div>
+
+    <script>
+        function predecirPrecio(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('formulario');
+            const formData = new URLSearchParams(new FormData(form));
+            const resultado = document.getElementById('resultado');
+
+            resultado.className = '';
+            resultado.style.display = 'none';
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    resultado.className = 'error';
+                    resultado.innerHTML = 'Error: ' + data.error;
+                } else {
+                    resultado.className = 'success';
+                    const precioFormateado = data.precio_estimado.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    resultado.innerHTML = 'Precio estimado del vehículo' +
+                        '<span class="precio">$' + precioFormateado + '</span>';
+                }
+            })
+            .catch(error => {
+                resultado.className = 'error';
+                resultado.innerHTML = 'Error en la solicitud.';
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
