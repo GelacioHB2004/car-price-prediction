@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <title>Predicción de Precio de Automóviles</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -22,17 +20,13 @@
         .card {
             background: #ffffff;
             border-radius: 16px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            max-width: 560px;
             width: 100%;
             padding: 36px 40px;
         }
 
-        h1 {
-            font-size: 24px;
-            color: #1c2b36;
-            margin-bottom: 4px;
-        }
+        h1 { font-size: 24px; color: #1c2b36; margin-bottom: 4px; }
 
         p.subtitle {
             color: #6b7c8a;
@@ -41,27 +35,12 @@
             font-size: 14px;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-        .field {
-            margin-bottom: 16px;
-        }
+        .field { margin-bottom: 16px; }
+        .field.full { grid-column: 1 / -1; }
 
-        .field.full {
-            grid-column: 1 / -1;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #34495e;
-            margin-bottom: 6px;
-        }
+        label { display: block; font-size: 13px; font-weight: 600; color: #34495e; margin-bottom: 6px; }
 
         input, select {
             width: 100%;
@@ -77,7 +56,7 @@
         input:focus, select:focus {
             outline: none;
             border-color: #2c5364;
-            box-shadow: 0 0 0 3px rgba(44, 83, 100, 0.15);
+            box-shadow: 0 0 0 3px rgba(44,83,100,0.15);
         }
 
         button {
@@ -94,41 +73,65 @@
             transition: opacity 0.2s, transform 0.1s;
         }
 
-        button:hover {
-            opacity: 0.9;
-        }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.99); }
 
-        button:active {
-            transform: scale(0.99);
-        }
+        /* Resultado siempre oculto hasta que se asigne clase */
+        #resultado { display: none; margin-top: 22px; border-radius: 10px; overflow: hidden; }
 
-        #resultado {
-            margin-top: 22px;
-            padding: 16px;
-            border-radius: 10px;
-            font-size: 15px;
+        #resultado.visible { display: block; }
+
+        .resultado-header {
+            background: #1c2b36;
+            color: #fff;
             text-align: center;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
-        #resultado.success {
-            background: #e7f6ec;
-            color: #1f7a3d;
+        .resultado-body {
+            padding: 20px 16px;
+            background: #f0f8f4;
             border: 1px solid #b9e3c4;
-            display: block;
+            border-top: none;
         }
 
-        #resultado.error {
+        .precio-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #d4eedd;
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .precio-row:last-child { border-bottom: none; }
+
+        .precio-row .label { font-weight: 600; }
+
+        .precio-row .valor {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f7a3d;
+        }
+
+        .precio-row .valor.real { color: #2c5364; }
+
+        .precio-row .valor.diff-pos { color: #b3261e; }
+        .precio-row .valor.diff-neg { color: #1f7a3d; }
+
+        #resultado.error-box {
+            display: block;
             background: #fdecea;
             color: #b3261e;
             border: 1px solid #f5c2c0;
-            display: block;
-        }
-
-        #resultado .precio {
-            font-size: 26px;
-            font-weight: 700;
-            display: block;
-            margin-top: 4px;
+            padding: 16px;
+            text-align: center;
+            font-size: 15px;
         }
 
         .footer-note {
@@ -136,6 +139,19 @@
             font-size: 12px;
             color: #9aa7b0;
             text-align: center;
+        }
+
+        .real-price-section {
+            margin-top: 16px;
+            padding: 12px;
+            background: #eef6fb;
+            border: 1px dashed #90bdd4;
+            border-radius: 8px;
+        }
+
+        .real-price-section label {
+            color: #2c5364;
+            margin-bottom: 6px;
         }
     </style>
 </head>
@@ -198,6 +214,12 @@
                 </div>
             </div>
 
+            <!-- Precio real opcional para comparar -->
+            <div class="real-price-section">
+                <label for="precio_real">💡 Precio real del vehículo (opcional, para comparar)</label>
+                <input type="number" id="precio_real" name="precio_real" min="0" step="0.01" placeholder="Ej: 52993.45">
+            </div>
+
             <button type="submit">Predecir Precio</button>
         </form>
 
@@ -207,41 +229,70 @@
     </div>
 
     <script>
+        function fmt(num) {
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         function predecirPrecio(event) {
             event.preventDefault();
 
             const form = document.getElementById('formulario');
             const formData = new URLSearchParams(new FormData(form));
             const resultado = document.getElementById('resultado');
+            const precioRealInput = document.getElementById('precio_real').value;
 
+            // Resetear sin inline style
             resultado.className = '';
-            resultado.style.display = 'none';
+            resultado.innerHTML = '';
 
             fetch('/predict', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString()
             })
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    resultado.className = 'error';
-                    resultado.innerHTML = 'Error: ' + data.error;
+                    resultado.className = 'error-box';
+                    resultado.innerHTML = '❌ Error: ' + data.error;
                 } else {
-                    resultado.className = 'success';
-                    const precioFormateado = data.precio_estimado.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                    resultado.innerHTML = 'Precio estimado del vehículo' +
-                        '<span class="precio">$' + precioFormateado + '</span>';
+                    const predicho = data.precio_estimado;
+                    let html = `
+                        <div class="resultado-header">📊 Resultado de la Predicción</div>
+                        <div class="resultado-body">
+                            <div class="precio-row">
+                                <span class="label">💰 Precio predicho</span>
+                                <span class="valor">$${fmt(predicho)}</span>
+                            </div>`;
+
+                    if (precioRealInput !== '' && !isNaN(parseFloat(precioRealInput))) {
+                        const real = parseFloat(precioRealInput);
+                        const diff = predicho - real;
+                        const diffAbs = Math.abs(diff);
+                        const pct = ((diffAbs / real) * 100).toFixed(2);
+                        const signo = diff >= 0 ? '+' : '-';
+                        const diffClass = diff >= 0 ? 'diff-pos' : 'diff-neg';
+                        const emoji = diff >= 0 ? '🔺' : '🔻';
+
+                        html += `
+                            <div class="precio-row">
+                                <span class="label">🏷️ Precio real</span>
+                                <span class="valor real">$${fmt(real)}</span>
+                            </div>
+                            <div class="precio-row">
+                                <span class="label">${emoji} Diferencia</span>
+                                <span class="valor ${diffClass}">${signo}$${fmt(diffAbs)} (${signo}${pct}%)</span>
+                            </div>`;
+                    }
+
+                    html += `</div>`;
+                    resultado.className = 'visible';
+                    resultado.innerHTML = html;
                 }
             })
             .catch(error => {
-                resultado.className = 'error';
-                resultado.innerHTML = 'Error en la solicitud.';
+                resultado.className = 'error-box';
+                resultado.innerHTML = '❌ Error en la solicitud.';
                 console.error('Error:', error);
             });
         }
